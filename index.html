@@ -47,14 +47,6 @@
     @media(max-width:980px){.wrap{grid-template-columns:1fr}header.top{left:18px;right:18px} .sidebar{display:none} .grid{grid-template-columns:repeat(1,1fr)} .wide{grid-column:span 1}}
     /* tiny chart */
     .spark{width:100%;height:60px}
-    /* login modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:40}
-    .modal{background:linear-gradient(180deg,#071827,#081527);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);width:420px;max-width:94%}
-    .tabs{display:flex;gap:10px;margin-bottom:12px}
-    .tab{padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.02);cursor:pointer}
-    .tab.active{background:linear-gradient(90deg,var(--accent),#ff7a7a);color:#082}
-    .small-muted{color:var(--muted);font-size:12px}
-    .product-list{max-height:240px;overflow:auto}
     .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
     footer.report{margin-top:12px}
   </style>
@@ -92,12 +84,11 @@
       </div>
       <div style="display:flex;gap:12px;align-items:center">
         <input id="search" placeholder="Search orders, items, tests" style="padding:8px 12px;border-radius:10px;border:none;background:rgba(255,255,255,0.02);color:#e6eef8;outline:none" />
-        <div id="user-pill" class="pill">Welcome</div>
+        <div id="user-pill" class="pill">Welcome, Admin</div>
       </div>
     </header>
 
     <main class="content">
-      <!-- (all views identical to your provided app - omitted here for brevity) -->
       <!-- DASHBOARD -->
       <section id="view-dashboard" class="grid view">
         <div class="card">
@@ -278,11 +269,11 @@
           <h3>Settings</h3>
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
             <div>
-              <div class="small-muted">Demo auth (stored locally)</div>
-              <div class="small-muted">You can change username/password below — this will persist in localStorage</div>
+              <div class="small-muted">Local demo settings</div>
+              <div class="small-muted">Change stored admin credentials (demo only)</div>
             </div>
             <div style="margin-left:auto">
-              <button class="btn-ghost" onclick="logout()">Logout</button>
+              <button class="btn-ghost" onclick="location.reload()">Reload</button>
             </div>
           </div>
           <div style="display:flex;gap:12px;align-items:center">
@@ -296,54 +287,9 @@
     </main>
   </div>
 
-  <!-- LOGIN / SIGNUP MODAL -->
-  <div id="login-modal" class="modal-backdrop hidden">
-    <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-weight:700" id="modal-title">Sign in — Honey Medico (Demo)</div>
-        <div class="small-muted">LocalStorage demo</div>
-      </div>
-
-      <div class="tabs">
-        <div id="tab-login" class="tab active" onclick="switchAuthTab('login')">Sign in</div>
-        <div id="tab-signup" class="tab" onclick="switchAuthTab('signup')">Sign up</div>
-      </div>
-
-      <!-- LOGIN FORM -->
-      <div id="auth-login">
-        <div style="margin-bottom:10px">
-          <input id="login-user" placeholder="Username" style="width:100%;margin-bottom:8px" />
-          <input id="login-pass" placeholder="Password" type="password" style="width:100%" />
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="remember-me" /> Remember me</label>
-          <div style="margin-left:auto">
-            <button class="btn" onclick="doLogin()">Sign in</button>
-          </div>
-        </div>
-        <div class="small-muted" style="margin-top:12px">Demo only: credentials stored locally. Do not use real passwords.</div>
-      </div>
-
-      <!-- SIGNUP FORM -->
-      <div id="auth-signup" class="hidden">
-        <div style="margin-bottom:10px">
-          <input id="signup-user" placeholder="Username" style="width:100%;margin-bottom:8px" />
-          <input id="signup-pass" placeholder="Password" type="password" style="width:100%;margin-bottom:8px" />
-          <input id="signup-pass-confirm" placeholder="Confirm password" type="password" style="width:100%" />
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="margin-left:auto">
-            <button class="btn" onclick="doSignup()">Create account</button>
-          </div>
-        </div>
-        <div class="small-muted" style="margin-top:12px">Accounts are stored locally for demo. For a production app use server-side auth.</div>
-      </div>
-    </div>
-  </div>
-
   <script>
     /* ----------------------
-       Demo data & persistence + multi-user auth
+       Demo data & persistence
        ---------------------- */
     const defaultProducts = [
       {sku:'SKU-RAKIT', name:'Rapid Antigen Kit', qty:20, threshold:5},
@@ -365,12 +311,8 @@
       {id:'T-5002', orderId:'HM-1003', sku:'SKU-PARAC', eta:20, status:'running', started: Date.now() - 10*60000},
     ]);
 
-    // USERS: array of {username, password} stored locally (demo)
-    // default admin
-    let USERS = loadState('hm_users', [{username:'admin', password:'password'}]);
-
-    // logged-in username (string) — persisted to survive refresh
-    let LOGGED_IN = loadState('hm_logged_in', null);
+    // simple admin credentials (demo). Stored locally so settings "Save" can update them.
+    let DEMO_CREDENTIALS = loadState('hm_demo_creds', {username:'admin', password:'password'});
 
     /* ---------- persistence helpers ---------- */
     function saveState(key, payload){ try{ localStorage.setItem(key, JSON.stringify(payload)); } catch(e){ console.warn('Unable to save', key, e) } }
@@ -380,8 +322,7 @@
       saveState('hm_products', PRODUCTS);
       saveState('hm_orders', ORDERS);
       saveState('hm_tests', TESTS);
-      saveState('hm_users', USERS);
-      saveState('hm_logged_in', LOGGED_IN);
+      saveState('hm_demo_creds', DEMO_CREDENTIALS);
     }
 
     /* -----------------------
@@ -392,78 +333,22 @@
     function skuAvailable(sku, qtyNeeded){ const p=findProductBySKU(sku); return p && p.qty >= qtyNeeded; }
 
     /* -----------------------
-       AUTH UI behavior
+       UI Navigation
        ----------------------- */
-    function switchAuthTab(tab){
-      document.getElementById('tab-login').classList.toggle('active', tab==='login');
-      document.getElementById('tab-signup').classList.toggle('active', tab==='signup');
-      document.getElementById('auth-login').classList.toggle('hidden', tab!=='login');
-      document.getElementById('auth-signup').classList.toggle('hidden', tab!=='signup');
-      document.getElementById('modal-title').innerText = tab==='login' ? 'Sign in — Honey Medico (Demo)' : 'Sign up — Honey Medico (Demo)';
-    }
-
-    function showLogin(show=true, defaultTab='login'){
-      const modal = document.getElementById('login-modal');
-      if(show){ modal.classList.remove('hidden'); switchAuthTab(defaultTab); } else modal.classList.add('hidden');
-    }
-
-    function updateHeaderUser(){
-      const pill = document.getElementById('user-pill');
-      pill.innerText = LOGGED_IN ? `Welcome, ${LOGGED_IN}` : 'Not signed in';
-    }
+    document.querySelectorAll('#nav .nav-item').forEach(it=>{
+      it.addEventListener('click', e=>{
+        document.querySelectorAll('#nav .nav-item').forEach(x=>x.classList.remove('active'));
+        it.classList.add('active');
+        const view = it.dataset.view;
+        document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+        document.getElementById('view-'+view).classList.remove('hidden');
+        document.getElementById('view-title').innerText = it.innerText.replace('🏠 ','').trim();
+        renderAll();
+      });
+    });
 
     /* -----------------------
-       Auth operations (signup/login/logout)
-       ----------------------- */
-    function doSignup(){
-      const user = document.getElementById('signup-user').value.trim();
-      const pass = document.getElementById('signup-pass').value;
-      const pass2 = document.getElementById('signup-pass-confirm').value;
-      if(!user || !pass){ alert('Enter username and password'); return; }
-      if(pass !== pass2){ alert('Passwords do not match'); return; }
-      if(USERS.some(u=>u.username.toLowerCase() === user.toLowerCase())){ alert('Username already exists'); return; }
-      // create user (demo: store plain password). In real app hash & server-store.
-      USERS.push({username: user, password: pass});
-      persistAll();
-      // auto-login after signup
-      LOGGED_IN = user;
-      persistAll();
-      showLogin(false);
-      updateHeaderUser();
-      alert('Account created and signed in (demo).');
-      // clear signup form
-      document.getElementById('signup-user').value=''; document.getElementById('signup-pass').value=''; document.getElementById('signup-pass-confirm').value='';
-    }
-
-    function doLogin(){
-      const user = document.getElementById('login-user').value.trim();
-      const pass = document.getElementById('login-pass').value;
-      if(!user || !pass){ alert('Enter credentials'); return; }
-      const found = USERS.find(u=>u.username === user && u.password === pass);
-      if(found){
-        LOGGED_IN = user;
-        // remember-me: if checked, persist; otherwise still persist so refresh keeps signed in per your request.
-        saveState('hm_logged_in', LOGGED_IN);
-        persistAll();
-        document.getElementById('login-user').value=''; document.getElementById('login-pass').value='';
-        showLogin(false);
-        updateHeaderUser();
-        alert('Signed in');
-      } else {
-        alert('Invalid credentials (demo). If new user, please sign up.');
-      }
-    }
-
-    function logout(){
-      if(!confirm('Sign out?')) return;
-      LOGGED_IN = null;
-      saveState('hm_logged_in', LOGGED_IN);
-      showLogin(true, 'login');
-      updateHeaderUser();
-    }
-
-    /* -----------------------
-       Rendering & app functions (copied & kept compatible)
+       Render functions
        ----------------------- */
     function renderAll(){
       renderOrders(); renderOrdersDetailed(); renderLow(); renderInventory(); renderProductsList(); renderTests(); drawPerf(); drawSpark('ordersSpark', ordersSparkData());
@@ -471,21 +356,6 @@
       updateReportSummary();
       persistAll();
     }
-
-    // (rest of the dashboard functions are unchanged from your previous version)
-    // For brevity in this response I include the same functions as before:
-    // renderOrders, renderOrdersDetailed, renderLow, renderInventory, renderProductsList,
-    // renderTests, createOrder, createOrderFromForm, duplicateOrder, markDispatch,
-    // restockSamples, requestFullRestock, adjustStock, removeProduct, addProduct,
-    // prioritizeTests, completeTest, calculateAverageTestDuration, calculateOnTimeRate,
-    // downloadReport, updateReportSummary, drawSpark, drawPerf, ordersSparkData, tick, init
-    // (All functions below are present and functionally the same as your previous app,
-    // but expect USERS/LOGGED_IN integration and local persistence to work.)
-
-    /* ---------- copy these helper functions from your previous file ---------- */
-    function findProductBySKU(sku){ return PRODUCTS.find(p=>p.sku===sku); }
-    function productNameFromSKU(sku){ const p=findProductBySKU(sku); return p ? p.name : sku; }
-    function skuAvailable(sku, qtyNeeded){ const p=findProductBySKU(sku); return p && p.qty >= qtyNeeded; }
 
     function renderOrders(){
       const tbody = document.getElementById('orders-table');
@@ -588,6 +458,10 @@
       document.getElementById('ontime').innerText = `${calculateOnTimeRate()}%`;
     }
 
+    /* -----------------------
+       Actions
+       ----------------------- */
+
     function createOrder(express=false){
       const available = PRODUCTS.find(p=>p.qty>0) || PRODUCTS[0];
       if(!available){ alert('No products available'); return; }
@@ -647,62 +521,206 @@
     }
 
     function restockSamples(){ alert('Restock request sent to procurement (demo)'); }
-    function requestFullRestock(){ PRODUCTS.forEach(p=> p.qty += 50); renderAll(); alert('Requested/Applied full restock (+50 each)'); }
-    function adjustStock(sku, change){ const p = findProductBySKU(sku); if(!p) return; p.qty = Math.max(0, p.qty + change); renderAll(); }
-    function removeProduct(sku){ if(!confirm('Remove product '+sku+'?')) return; PRODUCTS = PRODUCTS.filter(p=>p.sku !== sku); renderAll(); }
-    function addProduct(){ const name = document.getElementById('prod-name').value.trim(); const sku = document.getElementById('prod-sku').value.trim() || 'SKU-'+Math.floor(Math.random()*90000); const qty = parseInt(document.getElementById('prod-qty').value || '10',10); if(!name){ alert('Enter product name'); return; } if(PRODUCTS.some(p=>p.sku===sku)){ alert('SKU exists'); return; } PRODUCTS.unshift({sku, name, qty, threshold: Math.max(5, Math.round(qty*0.2))}); renderAll(); document.getElementById('prod-name').value=''; document.getElementById('prod-sku').value=''; document.getElementById('prod-qty').value='10'; }
 
-    function prioritizeTests(){ let changed = 0; const now = Date.now(); TESTS.forEach(t=>{ if(t.status !== 'done' && t.eta > 60){ t.eta = Math.min(60, Math.max(20, Math.round(t.eta*0.6))); if(!t.started) t.started = now; t.status = 'running'; changed++; } else if(t.status==='queued' && t.eta <= 60){ t.status = 'running'; t.started = now; changed++; } }); renderAll(); alert('Prioritized '+changed+' tests to aim for < 60 min completion'); }
-    function completeTest(testId){ const t = TESTS.find(x=>x.id===testId); if(!t) return; t.status = 'done'; t.completed = Date.now(); const allDone = TESTS.filter(x=>x.orderId===t.orderId).every(x=>x.status==='done'); if(allDone){ const ord = ORDERS.find(o=>o.id===t.orderId); if(ord) ord.status = 'completed'; } renderAll(); }
+    function requestFullRestock(){
+      PRODUCTS.forEach(p=> p.qty += 50);
+      renderAll();
+      alert('Requested/Applied full restock (+50 each)');
+    }
 
-    function calculateAverageTestDuration(){ const done = TESTS.filter(t=>t.status==='done' && t.started && t.completed).map(t=> (t.completed - t.started)/60000 ); if(done.length===0) return null; const avg = Math.round(done.reduce((s,n)=>s+n,0)/done.length); return avg; }
-    function calculateOnTimeRate(){ const completed = TESTS.filter(t=>t.status==='done' && t.started && t.completed); if(completed.length===0) return 0; const ok = completed.filter(t=> (t.completed - t.started) <= 60*60000).length; return Math.round((ok / completed.length) * 100); }
-
-    function downloadReport(){ const rows = [['Test ID','Order ID','Product','ETA (min)','Status','Started ISO','Completed ISO','Duration (min)']]; TESTS.forEach(t=>{ const started = t.started ? new Date(t.started).toISOString() : ''; const completed = t.completed ? new Date(t.completed).toISOString() : ''; const duration = (t.started && t.completed) ? Math.round((t.completed - t.started)/60000) : ''; rows.push([t.id, t.orderId, productNameFromSKU(t.sku), t.eta, t.status, started, completed, duration]); }); const csv = rows.map(r=>r.map(c=> `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'tests-report.csv'; a.click(); URL.revokeObjectURL(url); }
-
-    function updateReportSummary(){ const avg = calculateAverageTestDuration(); const ontime = calculateOnTimeRate(); const el = document.getElementById('report-summary'); if(!el) return; el.innerText = avg ? `Average test time: ${avg} min — On-time rate: ${ontime}%` : 'No completed tests yet'; }
-
-    function drawSpark(id, values){ const c = document.getElementById(id); if(!c) return; const ctx=c.getContext('2d'); const w=c.width=c.clientWidth; const h=c.height=60; ctx.clearRect(0,0,w,h); if(values.length===0) return; const max=Math.max(...values); const min=Math.min(...values); ctx.lineWidth=2; ctx.beginPath(); values.forEach((v,i)=>{const x = (i/(values.length-1))*(w-8)+4; const y = h - 6 - ((v-min)/(max-min||1))*(h-12); if(i==0) ctx.moveTo(x,y); else ctx.lineTo(x,y)}); ctx.strokeStyle='rgba(255,200,87,0.95)'; ctx.stroke(); ctx.lineTo(w-4,h-4); ctx.lineTo(4,h-4); ctx.closePath(); const g = ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'rgba(123,211,137,0.12)'); g.addColorStop(1,'rgba(255,200,87,0.02)'); ctx.fillStyle = g; ctx.fill(); }
-
-    function drawPerf(){ const c = document.getElementById('perfChart'); if(!c) return; const ctx=c.getContext('2d'); const w=c.width; const h=c.height; ctx.clearRect(0,0,w,h); const durations = TESTS.filter(t=>t.started && t.completed).slice(-10).map(t=> Math.round((t.completed - t.started)/60000)); const data = durations.length ? durations : [60,55,50,45,40,42,38,45,47,44]; const max=Math.max(...data); const min=Math.min(...data); ctx.beginPath(); data.forEach((v,i)=>{const x=(i/(data.length-1))*(w-20)+10; const y = h - 10 - ((v-min)/(max-min||1))*(h-20); if(i==0) ctx.moveTo(x,y); else ctx.lineTo(x,y)}); ctx.lineTo(w-10,h-10); ctx.lineTo(10,h-10); ctx.closePath(); ctx.fillStyle='rgba(123,211,137,0.12)'; ctx.fill(); ctx.strokeStyle='rgba(123,211,137,0.9)'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font='12px monospace'; ctx.fillText('Last runs (min)',10,16); }
-
-    function ordersSparkData(){ const points = 8; const vals = []; for(let i=0;i<points;i++){ vals.push(Math.max(2, Math.round( (ORDERS.length * (0.3 + Math.random()*1.2)) / (i+1) ))); } return vals; }
-
-    function tick(){ TESTS.forEach(t=>{ if(t.status==='running' && t.started){ const elapsed = Math.round((Date.now() - t.started)/60000); t.eta = Math.max(0, t.eta - elapsed); if(elapsed >= Math.max(30, Math.min(120, t.eta + elapsed))){ t.status = 'done'; t.completed = Date.now(); } } }); ORDERS.forEach(o=>{ const testsFor = TESTS.filter(t=>t.orderId===o.id && t.status!=='done'); if(testsFor.length>0) o.eta = Math.max(...testsFor.map(t=>t.eta)); else if(o.status !== 'completed') o.eta = 5; }); const queuedOrders = ORDERS.filter(o=>o.status==='queued'); queuedOrders.forEach(o=>{ o.items.forEach(it=>{ const existingTest = TESTS.find(t=>t.orderId===o.id && t.sku===it.sku); if(!existingTest){ TESTS.push({id:'T-'+(5000+Math.floor(Math.random()*4000)), orderId:o.id, sku:it.sku, eta:o.eta, status:'queued', started:null}); } }); }); persistAll(); renderAll(); }
-    setInterval(()=>{ tick(); drawSpark('ordersSpark', ordersSparkData()); drawPerf(); }, 30000);
-
-    function init(){
-      if(!PRODUCTS || PRODUCTS.length===0){ PRODUCTS = defaultProducts; saveState('hm_products', PRODUCTS); }
-      // If not logged in, show login modal. If logged in, hide.
-      if(!LOGGED_IN){ showLogin(true, 'login'); } else { showLogin(false); }
-      // populate settings fields for the primary admin user if any
-      const admin = USERS[0] || {username:'', password:''};
-      const sU = document.getElementById('settings-username'); const sP = document.getElementById('settings-password');
-      if(sU) sU.value = admin.username || '';
-      if(sP) sP.value = admin.password || '';
-
-      const af = document.getElementById('activeFilter');
-      if(af) af.addEventListener('change', ()=> renderOrders());
+    function adjustStock(sku, change){
+      const p = findProductBySKU(sku);
+      if(!p) return;
+      p.qty = Math.max(0, p.qty + change);
       renderAll();
     }
 
-    // settings update (for the first admin-like account only - demo)
+    function removeProduct(sku){
+      if(!confirm('Remove product '+sku+'?')) return;
+      PRODUCTS = PRODUCTS.filter(p=>p.sku !== sku);
+      renderAll();
+    }
+
+    function addProduct(){
+      const name = document.getElementById('prod-name').value.trim();
+      const sku = document.getElementById('prod-sku').value.trim() || 'SKU-'+Math.floor(Math.random()*90000);
+      const qty = parseInt(document.getElementById('prod-qty').value || '10',10);
+      if(!name){ alert('Enter product name'); return; }
+      if(PRODUCTS.some(p=>p.sku===sku)){ alert('SKU exists'); return; }
+      PRODUCTS.unshift({sku, name, qty, threshold: Math.max(5, Math.round(qty*0.2))});
+      renderAll();
+      document.getElementById('prod-name').value=''; document.getElementById('prod-sku').value=''; document.getElementById('prod-qty').value='10';
+    }
+
+    /* -----------------------
+       Tests & prioritize logic
+       ----------------------- */
+    function prioritizeTests(){
+      let changed = 0;
+      const now = Date.now();
+      TESTS.forEach(t=>{
+        if(t.status !== 'done' && t.eta > 60){
+          t.eta = Math.min(60, Math.max(20, Math.round(t.eta*0.6)));
+          if(!t.started) t.started = now;
+          t.status = 'running';
+          changed++;
+        } else if(t.status==='queued' && t.eta <= 60){
+          t.status = 'running'; t.started = now; changed++;
+        }
+      });
+      renderAll();
+      alert('Prioritized '+changed+' tests to aim for < 60 min completion');
+    }
+
+    function completeTest(testId){
+      const t = TESTS.find(x=>x.id===testId); if(!t) return;
+      t.status = 'done';
+      t.completed = Date.now();
+      const allDone = TESTS.filter(x=>x.orderId===t.orderId).every(x=>x.status==='done');
+      if(allDone){
+        const ord = ORDERS.find(o=>o.id===t.orderId);
+        if(ord) ord.status = 'completed';
+      }
+      renderAll();
+    }
+
+    /* -----------------------
+       Reporting
+       ----------------------- */
+    function calculateAverageTestDuration(){
+      const done = TESTS.filter(t=>t.status==='done' && t.started && t.completed).map(t=> (t.completed - t.started)/60000 );
+      if(done.length===0) return null;
+      const avg = Math.round(done.reduce((s,n)=>s+n,0)/done.length);
+      return avg;
+    }
+    function calculateOnTimeRate(){
+      const completed = TESTS.filter(t=>t.status==='done' && t.started && t.completed);
+      if(completed.length===0) return 0;
+      const ok = completed.filter(t=> (t.completed - t.started) <= 60*60000).length;
+      return Math.round((ok / completed.length) * 100);
+    }
+
+    function downloadReport(){
+      const rows = [['Test ID','Order ID','Product','ETA (min)','Status','Started ISO','Completed ISO','Duration (min)']];
+      TESTS.forEach(t=>{
+        const started = t.started ? new Date(t.started).toISOString() : '';
+        const completed = t.completed ? new Date(t.completed).toISOString() : '';
+        const duration = (t.started && t.completed) ? Math.round((t.completed - t.started)/60000) : '';
+        rows.push([t.id, t.orderId, productNameFromSKU(t.sku), t.eta, t.status, started, completed, duration]);
+      });
+      const csv = rows.map(r=>r.map(c=> `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'tests-report.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function updateReportSummary(){
+      const avg = calculateAverageTestDuration(); const ontime = calculateOnTimeRate();
+      const el = document.getElementById('report-summary');
+      if(!el) return;
+      el.innerText = avg ? `Average test time: ${avg} min — On-time rate: ${ontime}%` : 'No completed tests yet';
+    }
+
+    /* -----------------------
+       Small charts (canvas)
+       ----------------------- */
+    function drawSpark(id, values){
+      const c = document.getElementById(id); if(!c) return; const ctx=c.getContext('2d'); const w=c.width=c.clientWidth; const h=c.height=60; ctx.clearRect(0,0,w,h);
+      if(values.length===0) return;
+      const max=Math.max(...values); const min=Math.min(...values);
+      ctx.lineWidth=2; ctx.beginPath(); values.forEach((v,i)=>{const x = (i/(values.length-1))*(w-8)+4; const y = h - 6 - ((v-min)/(max-min||1))*(h-12); if(i==0) ctx.moveTo(x,y); else ctx.lineTo(x,y)});
+      ctx.strokeStyle='rgba(255,200,87,0.95)'; ctx.stroke();
+      ctx.lineTo(w-4,h-4); ctx.lineTo(4,h-4); ctx.closePath();
+      const g = ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'rgba(123,211,137,0.12)'); g.addColorStop(1,'rgba(255,200,87,0.02)');
+      ctx.fillStyle = g; ctx.fill();
+    }
+
+    function drawPerf(){
+      const c = document.getElementById('perfChart'); if(!c) return;
+      const ctx=c.getContext('2d'); const w=c.width; const h=c.height; ctx.clearRect(0,0,w,h);
+      const durations = TESTS.filter(t=>t.started && t.completed).slice(-10).map(t=> Math.round((t.completed - t.started)/60000));
+      const data = durations.length ? durations : [60,55,50,45,40,42,38,45,47,44];
+      const max=Math.max(...data); const min=Math.min(...data);
+      ctx.beginPath(); data.forEach((v,i)=>{const x=(i/(data.length-1))*(w-20)+10; const y = h - 10 - ((v-min)/(max-min||1))*(h-20); if(i==0) ctx.moveTo(x,y); else ctx.lineTo(x,y)});
+      ctx.lineTo(w-10,h-10); ctx.lineTo(10,h-10); ctx.closePath();
+      ctx.fillStyle='rgba(123,211,137,0.12)'; ctx.fill(); ctx.strokeStyle='rgba(123,211,137,0.9)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font='12px monospace'; ctx.fillText('Last runs (min)',10,16);
+    }
+
+    function ordersSparkData(){
+      const points = 8;
+      const vals = [];
+      for(let i=0;i<points;i++){
+        vals.push(Math.max(2, Math.round( (ORDERS.length * (0.3 + Math.random()*1.2)) / (i+1) )));
+      }
+      return vals;
+    }
+
+    /* -----------------------
+       Background tick
+       ----------------------- */
+    function tick(){
+      TESTS.forEach(t=>{
+        if(t.status==='running' && t.started){
+          const elapsed = Math.round((Date.now() - t.started)/60000);
+          t.eta = Math.max(0, t.eta - elapsed);
+          if(elapsed >= Math.max(30, Math.min(120, t.eta + elapsed))){
+            t.status = 'done'; t.completed = Date.now();
+          }
+        }
+      });
+      ORDERS.forEach(o=>{
+        const testsFor = TESTS.filter(t=>t.orderId===o.id && t.status!=='done');
+        if(testsFor.length>0) o.eta = Math.max(...testsFor.map(t=>t.eta));
+        else if(o.status !== 'completed') o.eta = 5;
+      });
+
+      const queuedOrders = ORDERS.filter(o=>o.status==='queued');
+      queuedOrders.forEach(o=>{
+        o.items.forEach(it=>{
+          const existingTest = TESTS.find(t=>t.orderId===o.id && t.sku===it.sku);
+          if(!existingTest){
+            TESTS.push({id:'T-'+(5000+Math.floor(Math.random()*4000)), orderId:o.id, sku:it.sku, eta:o.eta, status:'queued', started:null});
+          }
+        });
+      });
+
+      persistAll();
+      renderAll();
+    }
+    setInterval(()=>{ tick(); drawSpark('ordersSpark', ordersSparkData()); drawPerf(); }, 30000);
+
+    /* -----------------------
+       Init
+       ----------------------- */
+    function updateHeaderUser(){
+      const pill = document.getElementById('user-pill');
+      pill.innerText = 'Welcome, Admin';
+    }
+
+    function init(){
+      if(!PRODUCTS || PRODUCTS.length===0){ PRODUCTS = defaultProducts; saveState('hm_products', PRODUCTS); }
+      const af = document.getElementById('activeFilter');
+      if(af) af.addEventListener('change', ()=> renderOrders());
+      // populate settings fields from demo creds
+      const sU = document.getElementById('settings-username'); const sP = document.getElementById('settings-password');
+      if(sU) sU.value = DEMO_CREDENTIALS.username || '';
+      if(sP) sP.value = DEMO_CREDENTIALS.password || '';
+      renderAll();
+    }
+
+    // settings update (demo credentials)
     function updateCredentials(){
       const u = document.getElementById('settings-username').value.trim();
       const p = document.getElementById('settings-password').value;
       if(!u || !p){ alert('Provide both username and password'); return; }
-      // For demo: update first user if exists, else push new
-      if(USERS.length>0){
-        USERS[0].username = u; USERS[0].password = p;
-      } else {
-        USERS.push({username:u, password:p});
-      }
+      DEMO_CREDENTIALS = {username: u, password: p};
       persistAll();
-      alert('Credentials updated locally. Please sign in with new credentials.');
-      logout();
+      alert('Demo credentials updated locally.');
     }
 
-    // expose functions for buttons & debugging
+    // export some functions to window for button handlers
     window.createOrder = createOrder;
     window.restockSamples = restockSamples;
     window.prioritizeTests = prioritizeTests;
@@ -715,11 +733,7 @@
     window.completeTest = completeTest;
     window.requestFullRestock = requestFullRestock;
     window.downloadReport = downloadReport;
-    window.doLogin = doLogin;
-    window.doSignup = doSignup;
-    window.logout = logout;
     window.updateCredentials = updateCredentials;
-    window.switchAuthTab = switchAuthTab;
 
     init();
   </script>
